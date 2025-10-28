@@ -2,7 +2,9 @@
 
 A minimal proof of concept demonstrating WASM filters for Envoy Gateway.
 
-This project implements a simple Proxy-Wasm filter in Rust that adds a custom header (`x-wasm-custom: FOO`) to HTTP responses, packages it as an OCI image, and deploys it to Envoy Gateway running in a local kind cluster.
+This project implements a simple Proxy-Wasm filter in Rust that adds a custom header (`x-wasm-custom: FOO`) to HTTP responses, packages it as an OCI image, and demonstrates deployment to Envoy Gateway.
+
+> **⚠️ Important**: WASM extensions have a known issue in kind clusters due to cache initialization failures. This PoC successfully builds, packages, and deploys all components, but the WASM filter will not execute in kind. **For full functionality, deploy to a production Kubernetes cluster** (GKE, EKS, AKS, etc.). See [Known Limitations](#known-limitations) for details.
 
 ## Features
 
@@ -31,7 +33,7 @@ rustup target add wasm32-wasip1
 ### Full automated setup
 
 ```bash
-# Create kind cluster, install Envoy Gateway, deploy everything, and test
+# Create kind cluster, install Envoy Gateway, deploy everything
 just all
 ```
 
@@ -39,8 +41,9 @@ This will:
 1. Create a local kind cluster
 2. Install Envoy Gateway
 3. Deploy test infrastructure (namespace, backend, gateway, route)
-4. Apply the WASM extension policy
-5. Run a test to verify the custom header
+4. Apply the WASM extension policy (will show as invalid due to kind limitation)
+
+**Note**: Due to the kind limitation, the WASM filter won't actually execute. To test functionality, deploy to a production cluster.
 
 ### Step by step
 
@@ -173,25 +176,33 @@ spec:
 
 ## Testing
 
-### Local Testing (port-forward)
+### Testing in kind (Limited)
 
-In one terminal:
-```bash
-just port-forward
-```
-
-In another terminal:
-```bash
-just test-local
-```
-
-### Cluster Testing
+Due to the WASM cache initialization issue, the filter won't execute in kind:
 
 ```bash
 just test
 ```
 
-Expected output:
+You'll receive HTTP 200 responses from the backend, but **without** the custom `x-wasm-custom: FOO` header.
+
+### Testing in Production Cluster (Full Functionality)
+
+Deploy to a real Kubernetes cluster to see the WASM filter in action:
+
+```bash
+# Apply the manifests
+kubectl apply -f k8s/
+
+# Wait for resources to be ready
+kubectl wait --timeout=2m -n wasmup gateway/eg --for=condition=Programmed
+
+# Get the Gateway address and test
+export GATEWAY_HOST=$(kubectl get gateway/eg -n wasmup -o jsonpath='{.status.addresses[0].value}')
+curl -i -H "Host: www.example.com" "http://$GATEWAY_HOST/get"
+```
+
+Expected output on production cluster:
 ```
 HTTP/1.1 200 OK
 ...
