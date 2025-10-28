@@ -1,9 +1,13 @@
 use proxy_wasm::traits::{Context, HttpContext, RootContext};
-use proxy_wasm::types::Action;
+use proxy_wasm::types::{Action, ContextType};
 
 struct Root;
 impl Context for Root {}
 impl RootContext for Root {
+    fn get_type(&self) -> Option<ContextType> {
+        Some(ContextType::HttpContext)
+    }
+
     fn create_http_context(&self, _id: u32) -> Option<Box<dyn HttpContext>> {
         Some(Box::new(Filter))
     }
