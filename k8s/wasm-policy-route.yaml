@@ -1,0 +1,18 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyExtensionPolicy
+metadata:
+  name: wasm-add-header
+  namespace: wasmup
+spec:
+  targetRefs:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: backend
+  wasm:
+  - name: add-header
+    rootID: add_header_root
+    failOpen: true
+    code:
+      type: Image
+      image:
+        url: ghcr.io/stianfro/wasmup:v0.1.0
