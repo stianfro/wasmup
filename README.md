@@ -303,6 +303,31 @@ If using a private registry, ensure:
 1. The image is public, or
 2. Configure image pull secrets in the Envoy Gateway namespace
 
+### WASM cache not initialized
+
+If you see `Wasm: wasm cache is not initialized` in the EnvoyExtensionPolicy status:
+
+This is a known issue with Envoy Gateway in certain environments (particularly kind clusters). The WASM cache directory fails to initialize due to permission or storage configuration issues.
+
+**Workarounds**:
+1. Use a production Kubernetes cluster instead of kind
+2. Use HTTP source instead of OCI images (we use this in our manifests):
+   ```yaml
+   code:
+     type: HTTP
+     http:
+       url: https://raw.githubusercontent.com/stianfro/wasmup/main/plugin.wasm
+       sha256: <sha256sum>
+   ```
+3. Deploy Envoy Gateway with custom storage configuration
+
+The issue is tracked in the Envoy Gateway project and affects WASM functionality but not general gateway operation.
+
+## Known Limitations
+
+- **WASM in kind**: The WASM extension feature has known issues in kind clusters due to cache initialization. Test in a real Kubernetes cluster for full functionality.
+- **LoadBalancer pending**: In kind, LoadBalancer services stay in Pending state. Use port-forwarding or NodePort for local testing.
+
 ## Resources
 
 - [Envoy Gateway WASM Extensions](https://gateway.envoyproxy.io/docs/tasks/extensibility/wasm/)
