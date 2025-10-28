@@ -14,7 +14,7 @@ impl Context for Filter {}
 impl HttpContext for Filter {
     fn on_http_response_headers(&mut self, _num: usize, _eos: bool) -> Action {
         // Add a header to every response
-        let _ = proxy_wasm::hostcalls::set_http_response_header("x-wasm-custom", Some("FOO"));
+        self.set_http_response_header("x-wasm-custom", Some("FOO"));
         Action::Continue
     }
 }
